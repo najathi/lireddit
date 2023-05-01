@@ -5,7 +5,7 @@ import express from 'express'
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 
-import { __port__, __prod__ } from "./constants";
+import { COOKIE_NAME, __port__, __prod__ } from "./constants";
 import mikroConfig from '../mikro-orm.config'
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 
@@ -16,6 +16,8 @@ import { UserResolver } from "./resolvers/user";
 import session from "express-session"
 import { createClient } from "redis"
 import RedisStore from "connect-redis"
+
+import cors from 'cors'
 
 import { MyContext } from "./types";
 
@@ -34,8 +36,15 @@ const main = async () => {
     })
 
     app.use(
+        cors({
+            origin: 'http://localhost:3000',
+            credentials: true
+        })
+    );
+
+    app.use(
         session({
-            name: 'qid',
+            name: COOKIE_NAME,
             store: redisStore,
             cookie: {
                 maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
@@ -64,9 +73,11 @@ const main = async () => {
         context: ({ req, res }): MyContext => ({ em: orm.em, req, res })
     });
 
-
     await apolloServer.start()
-    apolloServer.applyMiddleware({ app, cors: false });
+    apolloServer.applyMiddleware({
+        app,
+        cors: false
+    });
     app.listen(__port__, () => {
         console.log(`🚀 Server ready and listening at ==> http://localhost:${__port__}${apolloServer.graphqlPath}`);
     });
