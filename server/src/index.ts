@@ -14,7 +14,8 @@ import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 
 import session from "express-session"
-import { createClient } from "redis"
+// import { createClient } from "redis"
+import Redis from "ioredis"
 import RedisStore from "connect-redis"
 
 import cors from 'cors'
@@ -27,8 +28,12 @@ const main = async () => {
 
     const app = express()
 
-    let redisClient = createClient()
-    redisClient.connect().catch(console.error)
+    // "redis"
+    // let redisClient = createClient()
+    // redisClient.connect().catch(console.error)
+
+    // "ioredis"
+    const redisClient = new Redis();
 
     let redisStore = new RedisStore({
         client: redisClient,
@@ -70,7 +75,12 @@ const main = async () => {
             validate: false,
         }),
         plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
-        context: ({ req, res }): MyContext => ({ em: orm.em, req, res })
+        context: ({ req, res }): MyContext => ({
+            em: orm.em,
+            req,
+            res,
+            redis: redisClient
+        })
     });
 
     await apolloServer.start()

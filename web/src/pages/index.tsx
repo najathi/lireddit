@@ -1,4 +1,4 @@
-import React from 'react'
+import { NextPage } from 'next';
 import { withUrqlClient } from 'next-urql';
 
 import NavBar from '../components/NavBar';
@@ -9,7 +9,7 @@ interface IndexProps {
 
 }
 
-const Index: React.FC<IndexProps> = ({ }) => {
+const Index: NextPage<IndexProps> = ({ }) => {
   const [{ data }] = usePostsQuery();
 
   return (
