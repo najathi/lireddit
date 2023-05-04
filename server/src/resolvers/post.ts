@@ -1,57 +1,42 @@
-import { Query, Resolver, Ctx, Arg, Mutation } from "type-graphql";
-import { RequiredEntityData } from "@mikro-orm/core";
+import { Query, Resolver, Arg, Mutation } from "type-graphql";
 
 import { Post } from "../entities/Post";
-import { MyContext } from "../types";
 
 @Resolver()
 export class PostResolver {
     @Query(() => [Post])
-    async posts(@Ctx() { em }: MyContext): Promise<Post[]> {
-        return await em.find(Post, {});
+    async posts(): Promise<Post[]> {
+        return await Post.find();
     }
 
     @Query(() => Post, { nullable: true })
-    async post(
-        @Arg("id") id: number,
-        @Ctx() { em }: MyContext,
-    ): Promise<Post | null> {
-        return await em.findOne(Post, id)
+    async post(@Arg("id") id: number): Promise<Post | null> {
+        return await Post.findOne({ where: { id } })
     }
 
     @Mutation(() => Post)
-    async createPost(
-        @Arg("title") title: string,
-        @Ctx() { em }: MyContext,
-    ): Promise<Post> {
-        const post = em.create(Post, { title } as RequiredEntityData<Post>);
-        await em.persistAndFlush(post);
-        return post;
+    async createPost(@Arg("title") title: string): Promise<Post> {
+        return Post.create({ title }).save();
     }
 
     @Mutation(() => Post, { nullable: true })
     async updatePost(
         @Arg("identifier") id: number,
         @Arg("title", () => String, { nullable: true }) title: string,
-        @Ctx() { em }: MyContext,
     ): Promise<Post | null> {
-        const post = await em.findOne(Post, id);
+        const post = await Post.findOne({ where: { id } });
         if (!post) {
             return null;
         }
         if (typeof title !== 'undefined') {
-            post.title = title;
-            await em.persistAndFlush(post);
+            await Post.update({ id }, { title });
         }
         return post;
     }
 
     @Mutation(() => Boolean)
-    async deletePost(
-        @Arg("id") id: number,
-        @Ctx() { em }: MyContext,
-    ): Promise<Boolean> {
-        await em.nativeDelete(Post, id);
+    async deletePost(@Arg("id") id: number): Promise<Boolean> {
+        await Post.delete(id);
         return true;
     }
 }

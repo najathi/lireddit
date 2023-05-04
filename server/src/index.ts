@@ -1,12 +1,11 @@
 import "reflect-metadata";
 import "dotenv-safe/config";
-import { MikroORM } from "@mikro-orm/core";
 import express from 'express'
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 
+import { AppDataSource } from './../typeorm.config';
 import { COOKIE_NAME, __port__, __prod__ } from "./constants";
-import mikroConfig from '../mikro-orm.config'
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 
 import { HelloResolver } from './resolvers/hello';
@@ -14,7 +13,6 @@ import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 
 import session from "express-session"
-// import { createClient } from "redis"
 import Redis from "ioredis"
 import RedisStore from "connect-redis"
 
@@ -23,16 +21,11 @@ import cors from 'cors'
 import { MyContext } from "./types";
 
 const main = async () => {
-    const orm = await MikroORM.init(mikroConfig);
-    await orm.getMigrator().up();
+
+    await AppDataSource.initialize();
 
     const app = express()
 
-    // "redis"
-    // let redisClient = createClient()
-    // redisClient.connect().catch(console.error)
-
-    // "ioredis"
     const redisClient = new Redis();
 
     let redisStore = new RedisStore({
@@ -76,7 +69,6 @@ const main = async () => {
         }),
         plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
         context: ({ req, res }): MyContext => ({
-            em: orm.em,
             req,
             res,
             redis: redisClient
